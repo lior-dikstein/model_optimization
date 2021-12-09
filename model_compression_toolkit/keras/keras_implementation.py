@@ -56,11 +56,12 @@ class KerasImplementation(FrameworkImplementation):
         """
         return keras_constants
 
-    def model_reader(self, model: Model) -> Graph:
+    def model_reader(self, model: Model, representative_data_gen: Callable) -> Graph:
         """
         Convert a framework's model into a graph.
         Args:
             model: Framework's model.
+            representative_data_gen (Callable): Dataset used for calibration.
 
         Returns:
             Graph representing the input model.

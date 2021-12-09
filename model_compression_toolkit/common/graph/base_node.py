@@ -88,7 +88,8 @@ class BaseNode:
         Returns: String that represents the node.
 
         """
-        return f'{self.layer_class.__name__}:{self.name}'
+        return f'{self.layer_class}:{self.name}' if isinstance(self.layer_class,
+                                                               str) else f'{self.layer_class.__name__}:{self.name}'
 
     def get_weights_by_keys(self, name: str) -> np.ndarray:
         """

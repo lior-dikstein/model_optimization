@@ -99,11 +99,12 @@ class FrameworkImplementation(ABC):
                              f'framework\'s to_numpy method.')
 
     @abstractmethod
-    def model_reader(self, model: Any) -> Graph:
+    def model_reader(self, model: Any, representative_data_gen: Callable) -> Graph:
         """
         Convert a framework's model into a graph.
         Args:
             model: Framework's model.
+            representative_data_gen (Callable): Dataset used for calibration.
 
         Returns:
             Graph representing the input model.

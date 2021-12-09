@@ -17,6 +17,8 @@
 import numpy as np
 from typing import List
 
+from networkx import topological_sort
+
 from model_compression_toolkit import FrameworkInfo, common
 from model_compression_toolkit.common.framework_implementation import FrameworkImplementation
 from model_compression_toolkit.common.graph.base_graph import Graph
@@ -51,7 +53,7 @@ class ModelCollector(object):
         stats_containers_list = []  # List of output statistics containers of nodes ordered
         # the same as node2fetch so statistics of outputs can be gathered for the correct statistics container.
 
-        for n in self.graph.nodes():
+        for n in topological_sort(self.graph):
             out_stats_container = self.graph.get_out_stats_collector(n)
             if isinstance(out_stats_container, list):  # If layer has multiple outputs
                 # Append nodes to output and track their statistics only if
