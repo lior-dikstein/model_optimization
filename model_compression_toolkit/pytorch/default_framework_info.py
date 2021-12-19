@@ -13,8 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 
+
 import torch
-from torch.nn import Conv2d, MaxPool2d, ReLU, ReLU6, Softmax, Dropout, Linear, ConvTranspose2d, AvgPool2d, BatchNorm2d
+from torch.nn import Conv2d, MaxPool2d, ReLU, ReLU6, Softmax, Dropout, Linear, ConvTranspose2d, AvgPool2d, BatchNorm2d, \
+    Sigmoid
+from torch.nn.functional import adaptive_avg_pool2d, softmax, sigmoid, relu, relu6
+from torch import flatten
 import operator
 
 from model_compression_toolkit.common.defaultdict import DefaultDict
@@ -25,6 +29,7 @@ from model_compression_toolkit.common.quantization.quantizers.lut_kmeans_quantiz
 from model_compression_toolkit.common.quantization.quantizers.power_of_two_quantizer import power_of_two_quantizer
 from model_compression_toolkit.pytorch.constants import KERNEL
 from model_compression_toolkit.pytorch.quantizer.fake_quant_builder import constraint_quantization
+from model_compression_toolkit.pytorch.reader.graph_builders import DummyPlaceHolder
 
 """
 Division of Pytorch modules by how they should be quantized.
@@ -35,9 +40,10 @@ NO_QUANTIZATION: Layers that should not be quantized.
 
 KERNEL_OPS = [Conv2d, Linear, ConvTranspose2d]
 
-NO_QUANTIZATION = [MaxPool2d, Dropout, 'output']
+NO_QUANTIZATION = [MaxPool2d, Dropout, flatten, torch.split, operator.getitem]
 
-ACTIVATION = ['placeholder', ReLU, ReLU6, AvgPool2d] + [operator.add, torch.add, 'add'] #+ [BatchNorm2d]
+ACTIVATION = [DummyPlaceHolder, ReLU, relu, ReLU6, relu6, AvgPool2d, adaptive_avg_pool2d, operator.add, torch.add,
+              operator.sub, torch.sub, operator.mul, torch.mul, torch.concat]
 
 """
 Map each layer to a list of its' weights attributes that should get quantized.
@@ -45,7 +51,6 @@ If a layer that is not listed here is queried, [None] is returned.
 """
 KERNEL_ATTRIBUTES = DefaultDict({Conv2d: [KERNEL],
                                  Linear: [KERNEL]})
-
 
 """
 Map a layer to its kernel's output and input channels indices.
@@ -60,14 +65,18 @@ The values are used for tensor min/max values initialization.
 """
 ACTIVATION2MINMAX = {} # should be an empty dict in Pytorch
 
-
 """
 Map from an Pytorch module to its min/max output values (if known).
 The values are used for tensor min/max values initialization.
 """
 LAYER2MINMAX = {Softmax: (0, 1),
+                softmax: (0, 1),
+                Sigmoid: (0, 1),
+                sigmoid: (0, 1),
                 ReLU: (0, None),
-                ReLU6: (0, 6)}
+                relu: (0, None),
+                ReLU6: (0, 6),
+                relu6: (0, 6)}
 
 """
 Mapping from a QuantizationMethod to an activation quantizer function.

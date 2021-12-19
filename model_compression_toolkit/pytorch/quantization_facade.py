@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+
 from typing import Callable, List
 
 from model_compression_toolkit import common
@@ -70,8 +71,8 @@ if importlib.util.find_spec("torch") is not None\
         Examples:
             Import a Pytorch module:
 
-            >>> from tensorflow.keras.applications.mobilenet import MobileNet
-            >>> module = MobileNet()
+            >>> import torchvision.models.mobilenet_v2 as models
+            >>> module = models.mobilenet_v2()
 
             Create a random dataset generator:
 
@@ -142,8 +143,8 @@ if importlib.util.find_spec("torch") is not None\
 
              Import a Pytorch module:
 
-             >>> from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
-             >>> module = MobileNetV2()
+            >>> import torchvision.models.mobilenet_v2 as models
+            >>> module = models.mobilenet_v2()
 
              Create a random dataset generator:
 
@@ -196,15 +197,15 @@ if importlib.util.find_spec("torch") is not None\
                                           target_kpi)
 
 else:
-    # If pytorch or tensorflow_model_optimization are not installed,
+    # If torch or torchvision are not installed,
     # we raise an exception when trying to use these functions.
     def pytorch_post_training_quantization(*args, **kwargs):
-        Logger.critical('Installing pytorch is mandatory '
+        Logger.critical('Installing Pytorch is mandatory '
                         'when using pytorch_post_training_quantization. '
-                        'Could not find Pytorch package.')
+                        'Could not find torch or torchvision packages.')
 
     def pytorch_post_training_quantization_mixed_precision(*args, **kwargs):
         Logger.critical('Installing Pytorch is mandatory '
                         'when using pytorch_post_training_quantization_mixed_precision. '
-                        'Could not find Pytorch package.')
+                        'Could not find torch or torchvision packages.')
 

@@ -13,39 +13,20 @@
 # limitations under the License.
 # ==============================================================================
 
-from typing import List, Any, Tuple, Callable
 
+from typing import List, Any, Tuple, Callable
 import numpy as np
 import torch
 from torch.nn import Module
 
 from model_compression_toolkit import QuantizationConfig, FrameworkInfo, common, GradientPTQConfig, \
     MixedPrecisionQuantizationConfig
-from model_compression_toolkit.common import Graph, Node
+from model_compression_toolkit.common import Graph, BaseNode
 from model_compression_toolkit.common.framework_implementation import FrameworkImplementation
 from model_compression_toolkit.common.model_builder_mode import ModelBuilderMode
 from model_compression_toolkit.common.user_info import UserInformation
 from model_compression_toolkit.pytorch.back2framework.model_builder import model_builder
 from model_compression_toolkit.pytorch.default_framework_info import DEFAULT_PYTORCH_INFO
-# from model_compression_toolkit.pytorch.gradient_ptq.training_wrapper import gptq_training_wrapper
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.activation_decomposition import \
-#     ActivationDecomposition
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.batchnorm_folding import \
-#     BatchNormalizationFolding
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.input_scaling import InputScaling, \
-#     InputScalingWithPad
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.mark_activation import MarkActivation
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.relu_bound_correction import \
-#     ReLUBoundCorrection
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.remove_relu_upper_bound import \
-#     RemoveReLUUpperBound
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.scale_equalization import \
-#     ScaleEqualization, ScaleEqualizationWithPad, ScaleEqualizationMidActivation, ScaleEqualizationMidActivationWithPad
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.separableconv_decomposition import \
-#     SeparableConvDecomposition
-# from model_compression_toolkit.pytorch.graph_substitutions.substitutions.shift_negative_activation import \
-#     apply_shift_negative_correction
-# from model_compression_toolkit.pytorch.mixed_precision.sensitivity_evaluation import get_sensitivity_evaluation
 from model_compression_toolkit.pytorch.graph_substitutions.substitutions.batchnorm_folding import \
     BatchNormalizationFolding
 from model_compression_toolkit.pytorch.reader.reader import model_reader
@@ -70,7 +51,9 @@ class PytorchImplementation(FrameworkImplementation):
         """
         return pytorch_constants
 
-    def model_reader(self, module: Module, representative_data_gen: Callable) -> Graph:
+    def model_reader(self,
+                     module: Module,
+                     representative_data_gen: Callable) -> Graph:
         """
         Convert a framework's module into a graph.
         Args:
@@ -82,11 +65,12 @@ class PytorchImplementation(FrameworkImplementation):
         """
         return model_reader(module, representative_data_gen)
 
-    def to_numpy(self, tensor: torch.Tensor) -> np.ndarray:
+    def to_numpy(self,
+                 tensor: torch.Tensor) -> np.ndarray:
         """
-        Convert framework's tensor to a Numpy array.
+        Convert a Pytorch tensor to a Numpy array.
         Args:
-            tensor: Framework's tensor.
+            tensor: Pytorch tensor.
 
         Returns:
             Numpy array converted from the input tensor.
@@ -133,11 +117,9 @@ class PytorchImplementation(FrameworkImplementation):
             Graph after SNC.
         """
         raise Exception('This feature is currently not yet available for Pytorch models. Work in progress.')
-        # return apply_shift_negative_correction(graph,
-        #                                        qc,
-        #                                        fw_info)
 
-    def attach_sc_to_node(self, node: Node,
+    def attach_sc_to_node(self,
+                          node: BaseNode,
                           fw_info: FrameworkInfo) -> common.statistics_collector.BaseStatsContainer:
         """
         Return a statistics collector that should be attached to a node's output
@@ -150,7 +132,6 @@ class PytorchImplementation(FrameworkImplementation):
         Returns:
             Statistics collector for the node.
         """
-        pass
         return get_node_stats_collector(node,
                                         fw_info)
 
@@ -163,7 +144,6 @@ class PytorchImplementation(FrameworkImplementation):
         """
         return []
 
-
     def get_substitutions_pre_statistics_collection(self) -> List[common.BaseSubstitution]:
         """
 
@@ -172,8 +152,8 @@ class PytorchImplementation(FrameworkImplementation):
         """
         return [BatchNormalizationFolding()]
 
-    def get_substitutions_post_statistics_collection(self, quant_config: QuantizationConfig) -> List[
-        common.BaseSubstitution]:
+    def get_substitutions_post_statistics_collection(self,
+                                                     quant_config: QuantizationConfig) -> List[common.BaseSubstitution]:
         """
         Return a list of the framework substitutions used after we collect statistics.
 
@@ -184,12 +164,6 @@ class PytorchImplementation(FrameworkImplementation):
             A list of the framework substitutions used after we collect statistics.
         """
         substitutions_list = []
-        # if quant_config.input_scaling:
-        #     substitutions_list.append(InputScaling())
-        #     substitutions_list.append(InputScalingWithPad())
-        #
-        # if quant_config.relu_unbound_correction:
-        #     substitutions_list.append(ReLUBoundCorrection())
         return substitutions_list
 
     def get_substitutions_channel_equalization(self,
@@ -206,11 +180,6 @@ class PytorchImplementation(FrameworkImplementation):
             A list of the framework substitutions used after we collect statistics.
         """
         substitutions_list = []
-        # if quant_config.activation_channel_equalization:
-        #     substitutions_list.extend([ScaleEqualization(quant_config, fw_info),
-        #                                ScaleEqualizationWithPad(quant_config, fw_info),
-        #                                ScaleEqualizationMidActivation(quant_config, fw_info),
-        #                                ScaleEqualizationMidActivationWithPad(quant_config, fw_info)])
         return substitutions_list
 
     def get_substitutions_pre_build(self) -> List[common.BaseSubstitution]:
@@ -220,7 +189,6 @@ class PytorchImplementation(FrameworkImplementation):
 
         """
         return []
-        # return [RemoveReLUUpperBound()]
 
     def gptq_training(self,
                       graph: Graph,
@@ -241,11 +209,6 @@ class PytorchImplementation(FrameworkImplementation):
             Updated graph after GPTQ.
         """
         raise Exception('This feature is currently not yet available for Pytorch models. Work in progress.')
-        # return gptq_training_wrapper(graph,
-        #                              representative_data_gen,
-        #                              gptq_config,
-        #                              fw_info)
-
 
     def get_sensitivity_evaluation_fn(self,
                                       graph: Graph,
@@ -268,8 +231,3 @@ class PytorchImplementation(FrameworkImplementation):
             A function that computes the metric.
         """
         raise Exception('This feature is currently not yet available for Pytorch models. Work in progress.')
-        # return get_sensitivity_evaluation(graph,
-        #                                   quant_config,
-        #                                   metrics_weights,
-        #                                   representative_data_gen,
-        #                                   fw_info)

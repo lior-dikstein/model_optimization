@@ -12,3 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+IMG_NET_VAL_PREPROCESSED_IMAGE_00000003 = 'utils/img_net_val_preprocessed_image_00000003.pickle'

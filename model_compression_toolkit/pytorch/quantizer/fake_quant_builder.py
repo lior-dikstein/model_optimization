@@ -14,40 +14,11 @@
 # ==============================================================================
 
 
-
 from typing import Tuple, Callable
-
-import numpy as np
 import torch
 
 from model_compression_toolkit.common.constants import THRESHOLD
-
-
-def quantizer_min_max_calculator(threshold: np.ndarray,
-                                 num_bits: int,
-                                 signed: bool) -> Tuple[float, float]:
-    """
-    Compute quantization range's min/max values given a threshold, number of bits,
-     and whether it's signed or not.
-
-    Args:
-        threshold: Threshold for quantization range values.
-        num_bits: Number of bits to use for quantization.
-        signed: Whether the quantization range should include negative values or not.
-
-    Returns:
-        Min and max values for quantization range.
-    """
-
-    if signed:
-        delta = threshold / (2 ** (num_bits - 1))
-        min_value = -threshold
-    else:
-        delta = threshold / (2 ** (num_bits))
-        min_value = 0
-
-    max_value = threshold - delta
-    return min_value, max_value
+from model_compression_toolkit.common.quantization.quantizers.quantizers_helpers import calculate_min_max_values
 
 
 def constraint_quantization(activation_n_bits: int,
@@ -69,7 +40,7 @@ def constraint_quantization(activation_n_bits: int,
     if activation_threshold is None:
         return None
 
-    min_value, max_value = quantizer_min_max_calculator(activation_threshold,
+    min_value, max_value = calculate_min_max_values(activation_threshold,
                                                         activation_n_bits,
                                                         activation_is_signed)
 

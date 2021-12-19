@@ -14,29 +14,17 @@
 # ==============================================================================
 
 
-# # Activation functions strings:
-# SOFTMAX = 'softmax'
-# SIGMOID = 'sigmoid'
-LINEAR = 'linear'
-# IDENTITY = 'identity'
-# TANH = 'tanh'
-# SWISH = 'swish'
-# RELU = 'relu'
-# SELU = 'selu'
+# # Layer type constants:
+PLACEHOLDER = 'placeholder'
+OUTPUT = 'output'
+
+# # Module operation type
+CALL_FUNCTION = 'call_function'
 
 # # Layers attributes constants:
-# PADDING = 'padding'
-# STRIDES = 'strides'
-# KERNEL_SIZE = 'kernel_size'
 LAYER_NAME = 'name'
-# TRAINABLE = 'trainable'
 USE_BIAS = 'bias'
-# FILTERS = 'filters'
-# PAD_VALID = 'valid'
-# PAD_SAME = 'same'
-# RELU_MAX_VALUE = 'max_value'
-# THRESHOLD = 'threshold'
-# NEGATIVE_SLOPE = 'negative_slope'
+TENSOR_META = 'tensor_meta'
 
 # # Layers variables names:
 KERNEL = 'weight'

@@ -15,19 +15,15 @@
 
 
 import copy
-
 import numpy as np
 from torch.nn import BatchNorm2d, Conv2d, ConvTranspose2d
 from typing import Tuple
 
 from model_compression_toolkit import common
 from model_compression_toolkit.common.graph.base_graph import Graph
-from model_compression_toolkit.common.graph.graph_matchers import EdgeMatcher, NodeOperationMatcher, \
-    NodeFrameworkAttrMatcher
-from model_compression_toolkit.common.graph.node import Node
-from model_compression_toolkit.pytorch.constants import KERNEL, BIAS, USE_BIAS, LAYER_NAME, \
-    GAMMA, BETA, EPSILON, \
-    MOVING_MEAN, \
+from model_compression_toolkit.common.graph.graph_matchers import EdgeMatcher, NodeOperationMatcher
+from model_compression_toolkit.common import BaseNode
+from model_compression_toolkit.pytorch.constants import KERNEL, BIAS, USE_BIAS, GAMMA, BETA, EPSILON, MOVING_MEAN, \
     MOVING_VARIANCE
 
 
@@ -38,7 +34,7 @@ class BatchNormalizationFolding(common.BaseSubstitution):
 
     def __init__(self):
         """
-        Matches: (DepthwiseConv2D, Conv2D, Conv2DTranspose)[activation=linear] -> BatchNormalization.
+        Matches: (Conv2D, Conv2DTranspose) -> BatchNormalization.
         """
         bn_node = NodeOperationMatcher(BatchNorm2d)
         source_node = NodeOperationMatcher(Conv2d) | \
@@ -48,7 +44,7 @@ class BatchNormalizationFolding(common.BaseSubstitution):
 
     def substitute(self,
                    graph: Graph,
-                   edge_nodes: Tuple[Node, Node]) -> Graph:
+                   edge_nodes: Tuple[BaseNode, BaseNode]) -> Graph:
         """
         Fold BatchNormalization into preceding linear layers.
 
@@ -64,7 +60,7 @@ class BatchNormalizationFolding(common.BaseSubstitution):
         num_edges_before_substition = len(graph.edges)
 
         conv_node = edge_nodes[0]
-		
+
         # If the linear operator is part of a reused group (it is the "base" node, or a reused node),
         # we should skip the substitution.
         if conv_node.reuse or conv_node.reuse_group is not None:
@@ -94,14 +90,10 @@ class BatchNormalizationFolding(common.BaseSubstitution):
         bias = beta + (bias - moving_mean) * weights_scale
 
         # Update Kernel
-        if conv_node.layer_class == ConvTranspose2d:
-            kernel = kernel * weights_scale[:, None, None, None]
-        else:
-            kernel = kernel * weights_scale[:, None, None, None]
+        kernel = kernel * weights_scale[:, None, None, None]
 
         framework_attr = copy.copy(conv_node.framework_attr)
         framework_attr[USE_BIAS] = True
-        # framework_attr[LAYER_NAME] = conv_node.name + '_bn'
 
         weights_dict = {KERNEL: kernel,
                         BIAS: bias}

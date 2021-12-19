@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+
 import copy
-from typing import List
-
 import torch
+from torch.nn import Module
 
-from model_compression_toolkit import common
-from model_compression_toolkit.common import Node
+from model_compression_toolkit.common import BaseNode
 
 
-def node_builder(n: common.Node):
+def node_builder(n: BaseNode) -> Module:
     """
     Build a Pytorch module from a node.
 
@@ -34,28 +34,6 @@ def node_builder(n: common.Node):
 
     framework_attr = copy.copy(n.framework_attr)
     node_instance = n.layer_class(**framework_attr)
-    for k, v in n.weights.items():
-        setattr(node_instance, k, torch.nn.Parameter(torch.Tensor(v), requires_grad=False))
-    node_instance.trainable = False  # Set all node as not trainable
+    node_instance.load_state_dict({k: torch.Tensor(v) for k, v in n.weights.items()})
+    node_instance.eval()  # Set all node as not trainable
     return node_instance
-
-
-def instance_builder(toposort: List[Node]):
-    """
-    Build a dictionary of nodes to their corresponding Keras
-    layers, given a list of nodes.
-
-    Args:
-        toposort: List of nodes sorted topological to build their layers.
-
-    Returns:
-        A dictionary of nodes to their corresponding Keras layers.
-    """
-
-    nodes_dict = dict()
-    for n in toposort:
-        if not n.reuse:
-            if not type(n.layer_class) == str:# Hold a single node in dictionary for all reused nodes from the same layer.
-                nodes_dict.update({n: node_builder(n)})
-        print()
-    return nodes_dict

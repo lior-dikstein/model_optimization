@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+
 from model_compression_toolkit import common, FrameworkInfo
 from model_compression_toolkit.common.statistics_collector import BaseStatsContainer
 
 
-def get_stats_collector(n: common.Node,
+def get_stats_collector(n: common.BaseNode,
                         fw_info: FrameworkInfo) -> BaseStatsContainer:
     """
     Create and initial a statistics collector for a linear operator. If the layer has an activation function and
@@ -41,7 +43,7 @@ def get_stats_collector(n: common.Node,
         return common.NoStatsContainer()
 
 
-def get_node_stats_collector(node: common.Node,
+def get_node_stats_collector(node: common.BaseNode,
                              fw_info: common.FrameworkInfo) -> common.statistics_collector.BaseStatsContainer:
     """
     Gets a node and a groups list and create and return a statistics collector for the node
