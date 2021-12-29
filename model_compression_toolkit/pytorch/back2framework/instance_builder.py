@@ -34,6 +34,7 @@ def node_builder(n: BaseNode) -> Module:
 
     framework_attr = copy.copy(n.framework_attr)
     node_instance = n.layer_class(**framework_attr)
-    node_instance.load_state_dict({k: torch.Tensor(v) for k, v in n.weights.items()})
+    node_instance.load_state_dict({k: torch.Tensor(v) for k, v in n.weights.items()}, strict=False)
     node_instance.eval()  # Set all node as not trainable
+    node_instance.cuda()
     return node_instance

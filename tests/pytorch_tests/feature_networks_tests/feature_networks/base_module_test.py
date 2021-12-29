@@ -32,7 +32,7 @@ class PytorchTest(BaseFeatureNetworkTest):
                                                     mct.ThresholdSelectionMethod.NOCLIPPING,
                                                     mct.QuantizationMethod.POWER_OF_TWO,
                                                     mct.QuantizationMethod.POWER_OF_TWO,
-                                                    32, 32, False, False, True,
+                                                    32, 32, False, True, True,
                                                     enable_weights_quantization=True,
                                                     enable_activation_quantization=True),
                 'all_4bit': mct.QuantizationConfig(mct.ThresholdSelectionMethod.NOCLIPPING,
@@ -73,7 +73,7 @@ class PytorchTest(BaseFeatureNetworkTest):
         float_result = float_model(*input_x)
         for model_name, quantized_model in quantized_models.items():
             quantized_model.eval()
-            quant_result = quantized_model(input_x)
+            quant_result = quantized_model(*input_x)
             for i, (f, q) in enumerate(zip(float_result, quant_result)):
                 # print(f'Float values: max - {f.abs().max().item()}, {q.abs().max().item()}')
                 print(f'{model_name} output {i} error: max - {np.max(np.abs(f.cpu().detach().numpy() - q.cpu().detach().numpy()))}, sum - {np.sum(np.abs(f.cpu().detach().numpy() - q.cpu().detach().numpy()))}')

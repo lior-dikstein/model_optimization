@@ -13,14 +13,16 @@
 # limitations under the License.
 # ==============================================================================
 import inspect
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Callable
 import torch
+from torch.fx import GraphModule
 
 from model_compression_toolkit.common import BaseNode
 from model_compression_toolkit.common.graph.base_graph import OutTensor
 from model_compression_toolkit.common.graph.edge import Edge
 from model_compression_toolkit.common.graph.functional_node import FunctionalNode
-from model_compression_toolkit.pytorch.constants import OUTPUT, PLACEHOLDER, TENSOR_META, CALL_FUNCTION
+from model_compression_toolkit.pytorch.constants import OUTPUT, PLACEHOLDER, TENSOR_META, CALL_FUNCTION, TYPE, \
+    CALL_METHOD
 
 
 class DummyPlaceHolder(object):
@@ -31,8 +33,9 @@ class DummyPlaceHolder(object):
         return PLACEHOLDER
 
 
-def nodes_builder(model: torch.fx.GraphModule,
-                  module_dict: Dict) -> Tuple[List, List, List, Dict]:
+def nodes_builder(model: GraphModule,
+                  module_dict: Dict,
+                  to_numpy: Callable) -> Tuple[List, List, List, Dict]:
     """
     Build a node from a fx node. A node contains all information to reconstruct the model module or call function
     it's representing in the model: operation, module configuration, weights, input/output shape.
@@ -52,7 +55,7 @@ def nodes_builder(model: torch.fx.GraphModule,
 
     for node in model.graph.nodes:
         # extract node type and framework attributes
-        framework_attr = node.kwargs
+        framework_attr = dict(node.kwargs)
         if node.target in module_dict.keys():
             node_type = type(module_dict[node.target])
             framework_attr = module_dict[node.target].__dict__
@@ -65,16 +68,18 @@ def nodes_builder(model: torch.fx.GraphModule,
         elif node.op == OUTPUT:
             output_nodes += node.all_input_nodes
             continue
+        elif node.op == CALL_METHOD:
+            node_type = getattr(torch, node.target)
         else:
-            raise Exception('Unknown node type')
+            raise Exception(f'Unknown node type: {node.name}')
 
         # extract layer weights and named buffers
         weights = {}
         if node.target in module_dict.keys():
-            named_parameters_weights = {parameter[0]: parameter[1].detach().numpy() for parameter in
+            named_parameters_weights = {parameter[0]: to_numpy(parameter[1]) for parameter in
                                         module_dict[node.target].named_parameters()}
-            named_buffer_weights = {parameter[0]: parameter[1].detach().numpy() for parameter in
-                                    module_dict[node.target].named_buffers()}
+            named_buffer_weights = {parameter[0]: to_numpy(parameter[1]) for parameter in
+                                    module_dict[node.target].named_buffers() if len(parameter[1].shape) > 0}
             weights.update(named_parameters_weights)
             weights.update(named_buffer_weights)
 
@@ -82,22 +87,29 @@ def nodes_builder(model: torch.fx.GraphModule,
         input_shape = []
         if node.op != PLACEHOLDER:
             for input_node in node.all_input_nodes:
-                tensor_meta = input_node.meta[TENSOR_META]
-                if isinstance(tensor_meta, torch.fx.passes.shape_prop.TensorMetadata):
-                    input_shape += [list(tensor_meta.shape)]
-                else:
-                    input_shape += [list(n.shape) for n in tensor_meta]
+                tensor_meta = input_node.meta
+                if input_node.meta[TYPE] == torch.Tensor:
+                    input_shape += [list(input_node.meta[TENSOR_META].shape)]
+                elif input_node.meta[TYPE] == tuple:
+                    input_shape += [list(n.shape) for n in input_node.meta[TENSOR_META]]
 
         # extract output shapes
-        if isinstance(node.meta[TENSOR_META], torch.fx.passes.shape_prop.TensorMetadata):
+        if node.meta[TYPE] == torch.Tensor:
             output_shape = [list(node.meta[TENSOR_META].shape)]
-        else:
+        elif node.meta[TYPE] == tuple:
             output_shape = [list(m.shape) for m in node.meta[TENSOR_META]]
+        else:
+            output_shape = []
+
+        # if isinstance(node.meta[TENSOR_META], torch.fx.passes.shape_prop.TensorMetadata):
+        #     output_shape = [list(node.meta[TENSOR_META].shape)]
+        # else:
+        #     output_shape = [list(m.shape) for m in node.meta[TENSOR_META]]
 
         # initiate graph nodes
-        if node.op == CALL_FUNCTION:
+        if node.op in [CALL_METHOD, CALL_FUNCTION]:
             graph_node_type = FunctionalNode
-            inputs_as_list = len(node.args) > 0 and isinstance(node.args[0], list) and all(
+            inputs_as_list = len(node.args) > 0 and isinstance(node.args[0], (list, tuple)) and all(
                 [isinstance(n, torch.fx.node.Node) for n in node.args[0]])
             num_inputs = 1 if inputs_as_list else len(node.all_input_nodes)
             op_call_args = list(node.args[num_inputs:])
@@ -130,7 +142,7 @@ def nodes_builder(model: torch.fx.GraphModule,
     return nodes, inputs, outputs, fx_node_2_graph_node
 
 
-def edges_builder(model: torch.fx.GraphModule,
+def edges_builder(model: GraphModule,
                    fx_node_2_graph_node: Dict) -> List:
     """
 

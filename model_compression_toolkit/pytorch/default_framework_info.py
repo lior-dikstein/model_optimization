@@ -15,10 +15,10 @@
 
 
 import torch
-from torch.nn import Conv2d, MaxPool2d, ReLU, ReLU6, Softmax, Dropout, Linear, ConvTranspose2d, AvgPool2d, BatchNorm2d, \
-    Sigmoid
-from torch.nn.functional import adaptive_avg_pool2d, softmax, sigmoid, relu, relu6
-from torch import flatten
+from torch.nn import Conv2d, MaxPool2d, ReLU, ReLU6, Softmax, Dropout, Linear, ConvTranspose2d, AvgPool2d, AdaptiveAvgPool2d, \
+    Sigmoid, Hardswish, Hardsigmoid, SiLU, BatchNorm2d
+from torch.nn.functional import adaptive_avg_pool2d, softmax, sigmoid, relu, relu6, hardswish, hardsigmoid, avg_pool2d, max_pool2d, silu
+from torch import flatten, reshape, split, unsqueeze, concat, cat, mean
 import operator
 
 from model_compression_toolkit.common.defaultdict import DefaultDict
@@ -40,10 +40,11 @@ NO_QUANTIZATION: Layers that should not be quantized.
 
 KERNEL_OPS = [Conv2d, Linear, ConvTranspose2d]
 
-NO_QUANTIZATION = [MaxPool2d, Dropout, flatten, torch.split, operator.getitem]
+NO_QUANTIZATION = [MaxPool2d, Dropout, flatten, split, operator.getitem, reshape, unsqueeze] #+ [AdaptiveAvgPool2d, Hardswish, Hardsigmoid, hardswish, hardsigmoid]
 
 ACTIVATION = [DummyPlaceHolder, ReLU, relu, ReLU6, relu6, AvgPool2d, adaptive_avg_pool2d, operator.add, torch.add,
-              operator.sub, torch.sub, operator.mul, torch.mul, torch.concat]
+              operator.sub, torch.sub, operator.mul, torch.mul, torch.concat, SiLU, Sigmoid, concat, cat, silu,
+              avg_pool2d, max_pool2d, mean, BatchNorm2d, AdaptiveAvgPool2d, Hardswish, Hardsigmoid, hardswish, hardsigmoid]
 
 """
 Map each layer to a list of its' weights attributes that should get quantized.
@@ -73,6 +74,8 @@ LAYER2MINMAX = {Softmax: (0, 1),
                 softmax: (0, 1),
                 Sigmoid: (0, 1),
                 sigmoid: (0, 1),
+                Hardsigmoid: (0, 1),
+                hardsigmoid: (0, 1),
                 ReLU: (0, None),
                 relu: (0, None),
                 ReLU6: (0, 6),

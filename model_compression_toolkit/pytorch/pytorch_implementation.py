@@ -29,6 +29,9 @@ from model_compression_toolkit.pytorch.back2framework.model_builder import model
 from model_compression_toolkit.pytorch.default_framework_info import DEFAULT_PYTORCH_INFO
 from model_compression_toolkit.pytorch.graph_substitutions.substitutions.batchnorm_folding import \
     BatchNormalizationFolding
+from model_compression_toolkit.pytorch.graph_substitutions.substitutions.mark_activation import MarkActivation
+from model_compression_toolkit.pytorch.graph_substitutions.substitutions.shift_negative_activation import \
+    apply_shift_negative_correction
 from model_compression_toolkit.pytorch.reader.reader import model_reader
 from model_compression_toolkit.pytorch.tensor_marking import get_node_stats_collector
 import model_compression_toolkit.pytorch.constants as pytorch_constants
@@ -63,7 +66,7 @@ class PytorchImplementation(FrameworkImplementation):
         Returns:
             Graph representing the input module.
         """
-        return model_reader(module, representative_data_gen)
+        return model_reader(module, representative_data_gen, self.to_numpy, self.to_tensor)
 
     def to_numpy(self,
                  tensor: torch.Tensor) -> np.ndarray:
@@ -76,6 +79,20 @@ class PytorchImplementation(FrameworkImplementation):
             Numpy array converted from the input tensor.
         """
         return tensor.detach().cpu().numpy()
+
+    def to_tensor(self, tensor: Any) -> torch.Tensor:
+        """
+        Convert a Numpy array to a framework's tensor.
+        Args:
+            tensor: Numpy array.
+
+        Returns:
+            Framework's tensor converted from the input Numpy array.
+        """
+        if isinstance(tensor, torch.Tensor):
+            return tensor
+        else:
+            return torch.from_numpy(tensor.astype(np.float32)).to('cuda')
 
     def model_builder(self,
                       graph: Graph,
@@ -116,8 +133,9 @@ class PytorchImplementation(FrameworkImplementation):
         Returns:
             Graph after SNC.
         """
-        raise Exception('This feature is currently not yet available for Pytorch models. Work in progress.')
-
+        return apply_shift_negative_correction(graph,
+                                               qc,
+                                               fw_info)
     def attach_sc_to_node(self,
                           node: BaseNode,
                           fw_info: FrameworkInfo) -> common.statistics_collector.BaseStatsContainer:
@@ -142,7 +160,7 @@ class PytorchImplementation(FrameworkImplementation):
         points we fuse.
 
         """
-        return []
+        return [MarkActivation()]
 
     def get_substitutions_pre_statistics_collection(self) -> List[common.BaseSubstitution]:
         """

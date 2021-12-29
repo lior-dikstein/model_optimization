@@ -36,14 +36,15 @@ if importlib.util.find_spec("torch") is not None\
     from model_compression_toolkit.pytorch.pytorch_implementation import PytorchImplementation
     from torch.nn import Module
 
+
     def pytorch_post_training_quantization(in_module: Module,
-                                         representative_data_gen: Callable,
-                                         n_iter: int = 500,
-                                         quant_config: QuantizationConfig = DEFAULTCONFIG,
-                                         fw_info: FrameworkInfo = DEFAULT_PYTORCH_INFO,
-                                         network_editor: List[EditRule] = [],
-                                         gptq_config: GradientPTQConfig = None,
-                                         analyze_similarity: bool = False):
+                                           representative_data_gen: Callable,
+                                           n_iter: int = 500,
+                                           quant_config: QuantizationConfig = DEFAULTCONFIG,
+                                           fw_info: FrameworkInfo = DEFAULT_PYTORCH_INFO,
+                                           network_editor: List[EditRule] = [],
+                                           gptq_config: GradientPTQConfig = None,
+                                           analyze_similarity: bool = False):
         """
         Quantize a trained Pytorch module using post-training quantization. The module is quantized using a
         symmetric constraint quantization thresholds (power of two).

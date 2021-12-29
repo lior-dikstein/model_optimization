@@ -20,11 +20,13 @@ OUTPUT = 'output'
 
 # # Module operation type
 CALL_FUNCTION = 'call_function'
+CALL_METHOD = 'call_method'
 
 # # Layers attributes constants:
 LAYER_NAME = 'name'
 USE_BIAS = 'bias'
 TENSOR_META = 'tensor_meta'
+TYPE = 'type'
 
 # # Layers variables names:
 KERNEL = 'weight'

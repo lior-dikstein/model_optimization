@@ -96,10 +96,25 @@ class FrameworkImplementation(ABC):
             Numpy array converted from the input tensor.
         """
         raise NotImplemented(f'{self.__class__.__name__} have to implement the '
-                             f'framework\'s to_numpy method.')
+                             f'framework\'s to_numpy method.')    \
 
     @abstractmethod
-    def model_reader(self, model: Any, representative_data_gen: Callable) -> Graph:
+    def to_tensor(self, tensor: np.ndarray) -> Any:
+        """
+        Convert a Numpy array to a framework's tensor.
+        Args:
+            tensor: Numpy array.
+
+        Returns:
+            Framework's tensor converted from the input Numpy array.
+        """
+        raise NotImplemented(f'{self.__class__.__name__} have to implement the '
+                             f'framework\'s to_tensor method.')
+
+    @abstractmethod
+    def model_reader(self,
+                     model: Any,
+                     representative_data_gen: Callable) -> Graph:
         """
         Convert a framework's model into a graph.
         Args:

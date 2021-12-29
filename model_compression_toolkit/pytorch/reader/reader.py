@@ -16,6 +16,8 @@
 
 import logging
 from typing import Callable, Dict
+
+import numpy as np
 import torch
 from torch.fx import symbolic_trace
 from torch.fx.passes.shape_prop import ShapeProp
@@ -40,13 +42,15 @@ def generate_module_dict(model: torch.nn.Module) -> Dict:
     return module_dict
 
 
-def build_graph(model: torch.fx.GraphModule) -> Graph:
+def build_graph(model: torch.fx.GraphModule,
+                to_numpy: Callable) -> Graph:
     """
     Given a Pytorch FX model, build and return an networkx MultiDiGraph containing all data (nodes, edges,
     inputs and outputs) representing that model.
 
     Args:
         model: Pytorch FX model to build its graph.
+        to_numpy: Function to convert framework's tensor to a Numpy array.
 
     Returns:
         Networkx MultiDiGraph representing the Keras model.
@@ -56,7 +60,7 @@ def build_graph(model: torch.fx.GraphModule) -> Graph:
     module_dict = generate_module_dict(model)
 
     # convert fx nodes to generic graph nodes
-    nodes, inputs, outputs, fx_node_2_graph_node = nodes_builder(model, module_dict)
+    nodes, inputs, outputs, fx_node_2_graph_node = nodes_builder(model, module_dict, to_numpy)
 
     # build graph edges
     edges = edges_builder(model, fx_node_2_graph_node)
@@ -65,35 +69,48 @@ def build_graph(model: torch.fx.GraphModule) -> Graph:
 
 
 def fx_graph_module_generation(pytorch_model: torch.nn.Module,
-                               representative_data_gen: Callable) -> torch.fx.GraphModule:
+                               representative_data_gen: Callable,
+                               to_tensor: Callable) -> torch.fx.GraphModule:
     """
     Generates a fx.GraphModule from a torch.nn.Module.
 
     Args:
         pytorch_model: A dynamic Pytorch model.
         representative_data_gen (Callable): Representative dataset used for shape inference.
+        to_tensor: Function to convert a Numpy array to a framework's tensor.
 
     Returns:
         A fx.GraphModule (static model) representing the Pytorch model.
     """
     pytorch_model.eval()
     symbolic_traced = symbolic_trace(pytorch_model)
-    ShapeProp(symbolic_traced).propagate(*representative_data_gen())
+    inputs = representative_data_gen()
+    input_for_shape_infer = []
+    for input_ in inputs:
+        if isinstance(input_, np.ndarray):
+            input_for_shape_infer.append(to_tensor(input_))
+        else:
+            input_for_shape_infer.append(input_)
+    ShapeProp(symbolic_traced).propagate(*input_for_shape_infer)
     return symbolic_traced
 
 
 def model_reader(model: torch.nn.Module,
-                 representative_data_gen: Callable) -> Graph:
+                 representative_data_gen: Callable,
+                 to_numpy: Callable,
+                 to_tensor: Callable) -> Graph:
     """
     Reads a Pytorch model, converts it to an FX Graph using the fx toolkit, then builds a base graph representing the fx graph.
     Args:
         model: Pytorch model to build its graph representation.
         representative_data_gen (Callable): Dataset used for calibration.
+        to_numpy: Function to convert framework's tensor to a Numpy array.
+        to_tensor: Function to convert a Numpy array to a framework's tensor.
 
     Returns:
         Base graph of the Pytorch model.
     """
     logging.info("Start Model Reading...")
-    fx_model = fx_graph_module_generation(model, representative_data_gen)
-    graph = build_graph(fx_model)
+    fx_model = fx_graph_module_generation(model, representative_data_gen, to_tensor)
+    graph = build_graph(fx_model, to_numpy)
     return graph

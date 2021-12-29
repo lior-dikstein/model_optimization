@@ -16,6 +16,8 @@
 
 import inspect
 from typing import Tuple, Any, Dict, List
+
+import numpy as np
 import torch
 from networkx import topological_sort
 
@@ -31,7 +33,7 @@ from model_compression_toolkit.pytorch.reader.graph_builders import DummyPlaceHo
 
 def build_input_tensors_list(node: BaseNode,
                              graph: Graph,
-                             inputs: List[torch.Tensor],
+                             inputs: Tuple[Any],
                              node_to_output_tensors_dict: Dict[BaseNode, List]) -> List[List]:
     """
     Given a node, build a list of input tensors the node gets. The list is built
@@ -124,11 +126,11 @@ class PytorchModelBuilder(torch.nn.Module):
         self.append2output = append2output
         for n in self.node_sort:
             if inspect.isclass(n.layer_class) and issubclass(n.layer_class, torch.nn.Module):
-                setattr(self, n.name, node_builder(n))
-
+                self.add_module(n.name, node_builder(n))
+                # setattr(self, n.name, node_builder(n))
 
     def forward(self,
-                inputs: List[torch.Tensor]) -> torch.Tensor:
+                *args: Any) -> Any:
         """
 
         Args:
@@ -139,14 +141,16 @@ class PytorchModelBuilder(torch.nn.Module):
 
         """
         node_to_output_tensors_dict = dict()
+        if len(args) == 1 and isinstance(args[0], (list, tuple)):
+            args = args[0]
         for n in self.node_sort:
             input_tensors = build_input_tensors_list(n,
                                                      self.graph,
-                                                     inputs,
+                                                     args,
                                                      node_to_output_tensors_dict)
             out_tensors_of_n = run_operation(n,  # Run node operation and fetch outputs
                                              input_tensors,
-                                             getattr(self, n.name) if hasattr(self, n.name) else n.layer_class,
+                                             op_func=getattr(self, n.name) if hasattr(self, n.name) else n.layer_class,
                                              mode=self.mode)
             if isinstance(out_tensors_of_n, list):
                 node_to_output_tensors_dict.update({n: out_tensors_of_n})
@@ -160,6 +164,8 @@ class PytorchModelBuilder(torch.nn.Module):
         else:
             for ot in self.graph.get_outputs():
                 output += node_to_output_tensors_dict[ot.node]
+            if len(output) == 1:
+                output = output[0]
         return output
 
 

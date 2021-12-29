@@ -56,7 +56,9 @@ class KerasImplementation(FrameworkImplementation):
         """
         return keras_constants
 
-    def model_reader(self, model: Model, representative_data_gen: Callable) -> Graph:
+    def model_reader(self,
+                     model: Model,
+                     representative_data_gen: Callable) -> Graph:
         """
         Convert a framework's model into a graph.
         Args:
@@ -78,6 +80,17 @@ class KerasImplementation(FrameworkImplementation):
             Numpy array converted from the input tensor.
         """
         return tensor.numpy()
+
+    def to_tensor(self, tensor: np.ndarray) -> np.ndarray:
+        """
+        Convert a Numpy array to a framework's tensor.
+        Args:
+            tensor: Numpy array.
+
+        Returns:
+            Framework's tensor converted from the input Numpy array.
+        """
+        return tensor
 
     def model_builder(self,
                       graph: Graph,
