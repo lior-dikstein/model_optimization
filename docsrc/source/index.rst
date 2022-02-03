@@ -44,15 +44,15 @@ Supported Features
 
 Quantization:
 
-Pytorch:
-
-* :ref:`Hardware-friendly Post Training Quantization<ug-pytorch_post_training_quantization>` [1]
-
 Keras:
 
 * :ref:`Hardware-friendly Post Training Quantization<ug-keras_post_training_quantization>` [1]
 * :ref:`Gradient base post training using knowledge distillation<ug-GradientPTQConfig>` (Experimental)
 * :ref:`Mixed-precision post training quantization<ug-keras_post_training_quantization_mixed_precision>` (Experimental)
+
+Pytorch (Experimental):
+
+* :ref:`Hardware-friendly Post Training Quantization<ug-pytorch_post_training_quantization>` [1]
 
 Visualization:
 

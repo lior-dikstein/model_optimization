@@ -2,40 +2,40 @@
 
 .. _ug-quickstart-pytorch:
 
-==========================
-MCT Quickstart Guideline
-==========================
+=================================================
+MCT Quickstart Guideline for Pytorch models
+=================================================
 
 Here is an example of a code that shows how to use MCT with Pytorch models.
 
 
-Import MCT and MobileNetV1 from Keras applications:
+Import MCT and mobilenet_v2 from torchvision.models:
 
-.. literalinclude:: ../../../tutorials/example_keras_mobilenet.py
+.. literalinclude:: ../../../tutorials/example_pytorch_mobilenet_v2.py
     :language: python
-    :lines: 16-17
+    :lines: 15-16
 
 |
 
 Data preprocessing functions:
 
-.. literalinclude:: ../../../tutorials/example_keras_mobilenet.py
+.. literalinclude:: ../../../tutorials/example_pytorch_mobilenet_v2.py
     :language: python
-    :lines: 27-48
+    :lines: 17-27
 
 |
 
 Initialize data loader:
 
-.. literalinclude:: ../../../tutorials/example_keras_mobilenet.py
+.. literalinclude:: ../../../tutorials/example_pytorch_mobilenet_v2.py
     :language: python
-    :lines: 53-75
+    :lines: 32-63
 
 |
 
 Run Post Training Quantization:
 
-.. literalinclude:: ../../../tutorials/example_keras_mobilenet.py
+.. literalinclude:: ../../../tutorials/example_pytorch_mobilenet_v2.py
     :language: python
-    :lines: 77-82
+    :lines: 65-70
 

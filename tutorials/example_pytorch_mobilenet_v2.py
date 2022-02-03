@@ -13,9 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 from torchvision.models import mobilenet_v2
+import model_compression_toolkit as mct
 from PIL import Image
 from torchvision import transforms
-import model_compression_toolkit as mct
 
 """
 This tutorial demonstrates how a model (more specifically, MobileNetV2) can be
