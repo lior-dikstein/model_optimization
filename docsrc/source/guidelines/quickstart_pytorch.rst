@@ -1,12 +1,12 @@
 :orphan:
 
-.. _ug-quickstart-keras:
+.. _ug-quickstart-pytorch:
 
 ==========================
 MCT Quickstart Guideline
 ==========================
 
-Here is an example of a code that shows how to use MCT with Keras models.
+Here is an example of a code that shows how to use MCT with Pytorch models.
 
 
 Import MCT and MobileNetV1 from Keras applications:

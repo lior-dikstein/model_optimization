@@ -44,6 +44,12 @@ Supported Features
 
 Quantization:
 
+Pytorch:
+
+* :ref:`Hardware-friendly Post Training Quantization<ug-pytorch_post_training_quantization>` [1]
+
+Keras:
+
 * :ref:`Hardware-friendly Post Training Quantization<ug-keras_post_training_quantization>` [1]
 * :ref:`Gradient base post training using knowledge distillation<ug-GradientPTQConfig>` (Experimental)
 * :ref:`Mixed-precision post training quantization<ug-keras_post_training_quantization_mixed_precision>` (Experimental)
@@ -66,6 +72,7 @@ Take a look of how you can start using MCT in just a few minutes
     :maxdepth: 1
 
     Quick start tutorial for Keras Post Training Quantization<../guidelines/quickstart_keras>
+    Quick start tutorial for Pytorch Post Training Quantization<../guidelines/quickstart_pytorch>
 
 
 
